@@ -1,0 +1,69 @@
+version: '3.9'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: aprove-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: aprove-mailhog
+    ports:
+      - '1025:1025'  # SMTP
+      - '8025:8025'  # Web UI
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://localhost:8025']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: aprove-api
+    ports:
+      - '3000:3000'
+    environment:
+      DATABASE_URL: file:./prod.db
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      JWT_EXPIRES_IN: 1m
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MAIL_HOST: mailhog
+      MAIL_PORT: 1025
+      MAIL_FROM: noreply@aprovame.com
+      OPS_EMAIL: ${OPS_EMAIL:-ops@aprovame.com}
+      PORT: 3000
+    depends_on:
+      redis:
+        condition: service_healthy
+      mailhog:
+        condition: service_healthy
+    volumes:
+      - api-db:/app/prisma
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: aprove-frontend
+    ports:
+      - '80:80'
+    depends_on:
+      - api
+    environment:
+      VITE_API_URL: http://localhost:3000
+
+volumes:
+  redis-data:
+  api-db:
