@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   redis:
     image: redis:7-alpine
@@ -51,18 +49,62 @@ services:
         condition: service_healthy
     volumes:
       - api-db:/app/prisma
+    develop:
+      watch:
+        # Imagens rodam build compilado; alterações exigem rebuild da imagem
+        - action: rebuild
+          path: ./backend/src
+        - action: rebuild
+          path: ./backend/prisma
+        - action: rebuild
+          path: ./backend/package.json
+        - action: rebuild
+          path: ./backend/package-lock.json
+        - action: rebuild
+          path: ./backend/prisma.config.ts
+        - action: rebuild
+          path: ./backend/Dockerfile
+        - action: rebuild
+          path: ./backend/tsconfig.json
+        - action: rebuild
+          path: ./backend/tsconfig.build.json
+        - action: rebuild
+          path: ./backend/nest-cli.json
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: aprove-frontend
+    # Host 8080 → evita conflito com serviços que já usam a porta 80 (IIS, Apache, etc.)
     ports:
-      - '80:80'
+      - '8080:80'
     depends_on:
       - api
     environment:
       VITE_API_URL: http://localhost:3000
+    develop:
+      watch:
+        - action: rebuild
+          path: ./frontend/src
+        - action: rebuild
+          path: ./frontend/public
+        - action: rebuild
+          path: ./frontend/index.html
+        - action: rebuild
+          path: ./frontend/package.json
+        - action: rebuild
+          path: ./frontend/package-lock.json
+        - action: rebuild
+          path: ./frontend/vite.config.ts
+        - action: rebuild
+          path: ./frontend/tsconfig.json
+        - action: rebuild
+          path: ./frontend/tsconfig.app.json
+        - action: rebuild
+          path: ./frontend/tsconfig.node.json
+        - action: rebuild
+          path: ./frontend/Dockerfile
 
 volumes:
   redis-data:

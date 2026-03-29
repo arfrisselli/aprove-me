@@ -8,6 +8,8 @@ RUN npm ci --only=production=false
 
 COPY prisma ./prisma
 COPY prisma.config.ts ./
+# prisma.config.ts exige DATABASE_URL; no build não há .env — URL fictícia só para gerar o client
+ENV DATABASE_URL="file:./build.db"
 RUN npx prisma generate
 
 COPY . .
@@ -24,11 +26,11 @@ COPY package*.json ./
 RUN npm ci --only=production && npm cache clean --force
 
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+# Prisma 7 com output customizado não cria node_modules/.prisma; engines ficam em @prisma/*
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY prisma ./prisma
 COPY prisma.config.ts ./
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
