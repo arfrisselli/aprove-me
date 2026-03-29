@@ -1,5 +1,5 @@
 import { api } from './api';
-import { Assignor } from '../types';
+import type { Assignor } from '../types';
 
 export const assignorService = {
   async findAll(): Promise<Assignor[]> {

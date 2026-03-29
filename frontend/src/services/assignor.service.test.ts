@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { assignorService } from './assignor.service';
 import { api } from './api';
-import { Assignor } from '../types';
+import type { Assignor } from '../types';
 
 vi.mock('./api', () => ({
   api: {

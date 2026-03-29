@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { payableService } from './payable.service';
 import { api } from './api';
-import { CreatePayablePayload, Payable } from '../types';
+import type { CreatePayablePayload, Payable } from '../types';
 
 vi.mock('./api', () => ({
   api: {

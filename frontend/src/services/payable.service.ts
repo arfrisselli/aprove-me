@@ -1,5 +1,5 @@
 import { api } from './api';
-import { CreatePayablePayload, Payable } from '../types';
+import type { CreatePayablePayload, Payable } from '../types';
 
 export const payableService = {
   async findAll(): Promise<Payable[]> {
