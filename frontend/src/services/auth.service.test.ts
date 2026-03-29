@@ -21,11 +21,14 @@ describe('authService', () => {
   it('login should call API and return token', async () => {
     vi.mocked(api.post).mockResolvedValue({ data: { token: 'test-token' } });
 
-    const result = await authService.login({ login: 'aprovame', password: 'aprovame' });
+    const result = await authService.login({
+      login: 'fixture-login',
+      password: 'fixture-password',
+    });
 
     expect(api.post).toHaveBeenCalledWith('/integrations/auth', {
-      login: 'aprovame',
-      password: 'aprovame',
+      login: 'fixture-login',
+      password: 'fixture-password',
     });
     expect(result).toEqual({ token: 'test-token' });
   });

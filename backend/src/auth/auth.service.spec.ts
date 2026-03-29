@@ -16,7 +16,7 @@ describe('AuthService', () => {
 
   const mockUser = {
     id: 'user-uuid',
-    login: 'aprovame',
+    login: 'fixture-login',
     password: 'hashed-password',
   };
 
@@ -52,7 +52,10 @@ describe('AuthService', () => {
       mockPrisma.user.findUnique.mockResolvedValue(mockUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
-      const result = await service.login({ login: 'aprovame', password: 'aprovame' });
+      const result = await service.login({
+        login: 'fixture-login',
+        password: 'fixture-password',
+      });
 
       expect(result).toEqual({ token: 'mocked-token' });
       expect(mockJwt.sign).toHaveBeenCalledWith({
@@ -74,7 +77,7 @@ describe('AuthService', () => {
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       await expect(
-        service.login({ login: 'aprovame', password: 'wrong' }),
+        service.login({ login: 'fixture-login', password: 'wrong' }),
       ).rejects.toThrow(UnauthorizedException);
     });
   });

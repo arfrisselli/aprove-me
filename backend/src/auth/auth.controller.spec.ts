@@ -25,7 +25,7 @@ describe('AuthController', () => {
 
   describe('login', () => {
     it('should call authService.login and return token', async () => {
-      const dto = { login: 'aprovame', password: 'aprovame' };
+      const dto = { login: 'fixture-login', password: 'fixture-password' };
       const result = await controller.login(dto);
 
       expect(mockAuthService.login).toHaveBeenCalledWith(dto);

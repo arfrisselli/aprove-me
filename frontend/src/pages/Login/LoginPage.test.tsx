@@ -55,17 +55,17 @@ describe('LoginPage', () => {
     renderLogin();
 
     fireEvent.change(screen.getByPlaceholderText('Login'), {
-      target: { value: 'aprovame' },
+      target: { value: 'fixture-login' },
     });
     fireEvent.change(screen.getByPlaceholderText('Senha'), {
-      target: { value: 'aprovame' },
+      target: { value: 'fixture-password' },
     });
     fireEvent.click(screen.getByRole('button', { name: /entrar/i }));
 
     await waitFor(() => {
       expect(authService.authService.login).toHaveBeenCalledWith({
-        login: 'aprovame',
-        password: 'aprovame',
+        login: 'fixture-login',
+        password: 'fixture-password',
       });
       expect(localStorage.getItem('token')).toBe('jwt-token');
       expect(mockNavigate).toHaveBeenCalledWith('/payables');
