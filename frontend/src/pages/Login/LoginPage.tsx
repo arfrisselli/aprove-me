@@ -1,8 +1,15 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
+import { useErrorToast } from '../../components/ErrorToastProvider';
 import { authService } from '../../services/auth.service';
+import {
+  AUTH_LOGOUT_REASON_KEY,
+  AUTH_LOGOUT_REASON_SESSION_EXPIRED,
+} from '../../services/api';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 const loginSchema = z.object({
   login: z.string().min(1, 'Login é obrigatório'),
@@ -13,11 +20,26 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const { showError } = useErrorToast();
+  const [sessionExpiredNotice, setSessionExpiredNotice] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (
+        sessionStorage.getItem(AUTH_LOGOUT_REASON_KEY) ===
+        AUTH_LOGOUT_REASON_SESSION_EXPIRED
+      ) {
+        sessionStorage.removeItem(AUTH_LOGOUT_REASON_KEY);
+        setSessionExpiredNotice(true);
+      }
+    } catch {
+      // sessionStorage indisponível
+    }
+  }, []);
 
   const {
     register,
     handleSubmit,
-    setError,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({ resolver: zodResolver(loginSchema) });
 
@@ -26,18 +48,34 @@ export function LoginPage() {
       const { token } = await authService.login(data);
       localStorage.setItem('token', token);
       navigate('/payables');
-    } catch {
-      setError('root', { message: 'Credenciais inválidas. Tente novamente.' });
+    } catch (err) {
+      showError(
+        getApiErrorMessage(err, 'Credenciais inválidas. Tente novamente.'),
+      );
     }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-blue-700">Aprove-me</h1>
           <p className="text-gray-500 mt-2 text-sm">Gestão de recebíveis — Bankme</p>
         </div>
+
+        {sessionExpiredNotice && (
+          <div
+            className="mb-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-left"
+            role="status"
+          >
+            <p className="text-sm font-medium text-amber-900">
+              Sua sessão expirou.
+            </p>
+            <p className="mt-1 text-sm text-amber-800">
+              Faça login novamente para continuar.
+            </p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
           <div>
@@ -47,7 +85,7 @@ export function LoginPage() {
             <input
               {...register('login')}
               type="text"
-              placeholder="aprovame"
+              placeholder="Login"
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             {errors.login && (
@@ -62,19 +100,13 @@ export function LoginPage() {
             <input
               {...register('password')}
               type="password"
-              placeholder="••••••••"
+              placeholder="Senha"
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             {errors.password && (
               <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>
             )}
           </div>
-
-          {errors.root && (
-            <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-              <p className="text-red-600 text-sm">{errors.root.message}</p>
-            </div>
-          )}
 
           <button
             type="submit"
