@@ -21,7 +21,7 @@ export function Layout() {
             Pagáveis
           </Link>
           <Link
-            to="/assignors/new"
+            to="/assignors"
             className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors"
           >
             Cedentes

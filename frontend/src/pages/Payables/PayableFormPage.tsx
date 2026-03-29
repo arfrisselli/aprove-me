@@ -1,17 +1,18 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useForm, type Resolver } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
+import { useErrorToast } from '../../components/ErrorToastProvider';
 import { payableService } from '../../services/payable.service';
 import { assignorService } from '../../services/assignor.service';
-import { Payable } from '../../types';
+import { getApiErrorMessage } from '../../utils/apiError';
+import { formatCpfCnpjDisplay } from '../../utils/formatDocumentBr';
+import type { Payable } from '../../types';
 
 const payableSchema = z.object({
-  value: z.coerce
-    .number({ invalid_type_error: 'Valor deve ser um número' })
-    .positive('Valor deve ser positivo'),
+  value: z.coerce.number().positive('Valor deve ser positivo'),
   emissionDate: z.string().min(1, 'Data de emissão é obrigatória'),
   assignorId: z.string().uuid('Selecione um cedente válido'),
 });
@@ -24,6 +25,8 @@ interface PayableFormPageProps {
 
 export function PayableFormPage({ payable }: PayableFormPageProps) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { showError } = useErrorToast();
   const isEditing = Boolean(payable);
 
   const { data: assignors = [] } = useQuery({
@@ -36,7 +39,7 @@ export function PayableFormPage({ payable }: PayableFormPageProps) {
     handleSubmit,
     formState: { errors },
   } = useForm<PayableFormData>({
-    resolver: zodResolver(payableSchema),
+    resolver: zodResolver(payableSchema) as Resolver<PayableFormData>,
     defaultValues: payable
       ? {
           value: payable.value,
@@ -69,8 +72,16 @@ export function PayableFormPage({ payable }: PayableFormPageProps) {
         assignor,
       });
     },
-    onSuccess: (result) => {
+    onSuccess: async (result) => {
+      await queryClient.invalidateQueries({
+        queryKey: ['payables'],
+        refetchType: 'all',
+      });
+      await queryClient.invalidateQueries({ queryKey: ['payable', result.id] });
       navigate(`/payables/${result.id}`);
+    },
+    onError: (err) => {
+      showError(getApiErrorMessage(err, 'Erro ao salvar pagável. Tente novamente.'));
     },
   });
 
@@ -84,7 +95,7 @@ export function PayableFormPage({ payable }: PayableFormPageProps) {
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-3 mb-5">
           <p className="text-yellow-700 text-sm">
             Nenhum cedente cadastrado.{' '}
-            <Link to="/assignors/new" className="underline font-medium">
+            <Link to="/assignors" className="underline font-medium">
               Cadastre um cedente primeiro.
             </Link>
           </p>
@@ -135,7 +146,7 @@ export function PayableFormPage({ payable }: PayableFormPageProps) {
             <option value="">Selecione um cedente...</option>
             {assignors.map((assignor) => (
               <option key={assignor.id} value={assignor.id}>
-                {assignor.name} — {assignor.document}
+                {assignor.name} — {formatCpfCnpjDisplay(assignor.document)}
               </option>
             ))}
           </select>
@@ -143,12 +154,6 @@ export function PayableFormPage({ payable }: PayableFormPageProps) {
             <p className="text-red-500 text-xs mt-1">{errors.assignorId.message}</p>
           )}
         </div>
-
-        {mutation.isError && (
-          <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-            <p className="text-red-600 text-sm">Erro ao salvar pagável. Tente novamente.</p>
-          </div>
-        )}
 
         <div className="flex gap-3 pt-2">
           <button

@@ -1,11 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useErrorToast } from '../../components/ErrorToastProvider';
 import { payableService } from '../../services/payable.service';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 export function PayableDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { showError } = useErrorToast();
 
   const { data: payable, isLoading, isError } = useQuery({
     queryKey: ['payable', id],
@@ -18,6 +21,9 @@ export function PayableDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payables'] });
       navigate('/payables');
+    },
+    onError: (err) => {
+      showError(getApiErrorMessage(err, 'Não foi possível excluir o pagável.'));
     },
   });
 

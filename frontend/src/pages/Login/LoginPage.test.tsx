@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { ErrorToastProvider } from '../../components/ErrorToastProvider';
 import { LoginPage } from './LoginPage';
 import * as authService from '../../services/auth.service';
 
@@ -25,15 +26,17 @@ describe('LoginPage', () => {
   function renderLogin() {
     return render(
       <MemoryRouter>
-        <LoginPage />
+        <ErrorToastProvider>
+          <LoginPage />
+        </ErrorToastProvider>
       </MemoryRouter>,
     );
   }
 
   it('should render login form', () => {
     renderLogin();
-    expect(screen.getByPlaceholderText('aprovame')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('••••••••')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Login')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Senha')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /entrar/i })).toBeInTheDocument();
   });
 
@@ -51,10 +54,10 @@ describe('LoginPage', () => {
     vi.mocked(authService.authService.login).mockResolvedValue({ token: 'jwt-token' });
     renderLogin();
 
-    fireEvent.change(screen.getByPlaceholderText('aprovame'), {
+    fireEvent.change(screen.getByPlaceholderText('Login'), {
       target: { value: 'aprovame' },
     });
-    fireEvent.change(screen.getByPlaceholderText('••••••••'), {
+    fireEvent.change(screen.getByPlaceholderText('Senha'), {
       target: { value: 'aprovame' },
     });
     fireEvent.click(screen.getByRole('button', { name: /entrar/i }));
@@ -70,13 +73,15 @@ describe('LoginPage', () => {
   });
 
   it('should show error message on failed login', async () => {
-    vi.mocked(authService.authService.login).mockRejectedValue(new Error('Unauthorized'));
+    vi.mocked(authService.authService.login).mockRejectedValue(
+      new Error('Credenciais inválidas. Tente novamente.'),
+    );
     renderLogin();
 
-    fireEvent.change(screen.getByPlaceholderText('aprovame'), {
+    fireEvent.change(screen.getByPlaceholderText('Login'), {
       target: { value: 'wrong' },
     });
-    fireEvent.change(screen.getByPlaceholderText('••••••••'), {
+    fireEvent.change(screen.getByPlaceholderText('Senha'), {
       target: { value: 'wrong' },
     });
     fireEvent.click(screen.getByRole('button', { name: /entrar/i }));
